@@ -1,15 +1,31 @@
 # Asset Upsert Application
 
-A web application that allows users to upload JSON or CSV files containing asset details, validate the data, and perform upsert operations on a MongoDB database.
+A web application for bulk importing and upserting asset data from CSV/JSON files to MongoDB with a multi-step wizard interface.
 
 ## Features
 
-- Upload JSON or CSV files containing asset data
-- Multi-step process: validation, review, confirmation
-- Detailed validation feedback with error reporting
-- MongoDB upsert operations (update existing assets or insert new ones)
-- Real-time feedback on processing results
-- Comprehensive error handling and validation
+- **Multi-step Wizard Interface**:
+  - Step 1: Upload File (CSV/JSON)
+  - Step 2: Map Fields (match file columns to database fields)
+  - Step 3: Validate Data (review validation results)
+  - Step 4: Import Results (view import outcome)
+
+- **File Import**:
+  - Support for CSV and JSON file formats
+  - Drag-and-drop file upload
+  - Auto-detection of field mappings
+  - Validation before import
+
+- **Data Management**:
+  - MongoDB upsert operations (create new or update existing assets)
+  - Configurable error handling (skip errors or stop on first error)
+  - Detailed validation feedback
+
+- **Asset Viewing**:
+  - View all assets in a paginated table
+  - Search functionality
+  - Filter by status
+  - Sortable columns
 
 ## Prerequisites
 
@@ -18,26 +34,23 @@ A web application that allows users to upload JSON or CSV files containing asset
 
 ## Installation
 
-1. Clone the repository or download the source code.
-
-2. Navigate to the project directory:
+1. Clone the repository:
    ```
+   git clone https://github.com/yourusername/asset-upsert-app.git
    cd asset-upsert-app
    ```
 
-3. Install dependencies:
+2. Install dependencies:
    ```
    npm install
    ```
 
-4. Create a `.env` file in the root directory with the following variables:
+3. Create a `.env` file in the root directory:
    ```
    PORT=3000
    MONGODB_URI=mongodb://localhost:27017/asset_management
    NODE_ENV=development
    ```
-   
-   Note: Update the `MONGODB_URI` with your MongoDB connection string.
 
 ## Running the Application
 
@@ -53,153 +66,145 @@ A web application that allows users to upload JSON or CSV files containing asset
 
 2. Open your browser and navigate to `http://localhost:3000`
 
-## User Workflow
+## User Guide
 
-1. **Upload & Validate**: Select a JSON or CSV file and click "Upload & Validate"
-2. **Review Validation Results**: Review the validation summary and any invalid records
-3. **Confirm Import**: If there are valid records, click "Confirm Import" to proceed
-4. **View Import Results**: See the final results showing inserted and updated records
+### Importing Assets
 
-## File Format Requirements
+1. **Step 1: Upload File**
+   - Click "Browse" or drag and drop a CSV/JSON file
+   - File size limit: 10MB
+   - Supported formats: CSV, JSON
 
-### JSON Format
+2. **Step 2: Map Fields**
+   - Match columns from your file to database fields
+   - Required fields: assetId, name, location
+   - The system will attempt to auto-map fields with similar names
+   - Add custom mappings if needed
 
-JSON files should contain an array of objects, where each object represents an asset and must include an `assetId` field:
+3. **Step 3: Validate Data**
+   - Review validation results
+   - See counts of valid and invalid records
+   - View detailed error messages for invalid records
+   - Configure import options:
+     - Update Existing: Yes/No
+     - Skip Errors: Yes/No
 
-```json
-[
-  {
-    "assetId": "LAP001",
-    "name": "Laptop A",
-    "location": "Office 101",
-    "status": "Active"
-  },
-  {
-    "assetId": "MON005",
-    "name": "Monitor B",
-    "location": "WFH",
-    "status": "In Repair"
-  }
-]
-```
+4. **Step 4: Import Results**
+   - View summary of import operation
+   - See counts of created, updated, and failed records
+   - View detailed error messages for failed imports
+   - Options:
+     - View Assets: Navigate to the asset listing page
+     - Start New Import: Begin a new import process
 
-### CSV Format
+### Viewing Assets
 
-CSV files should have a header row with an `assetId` column, and each subsequent row represents an asset:
+1. Navigate to the Assets page by:
+   - Clicking "VIEW ASSETS" after an import
+   - Going to `/assets.html` directly
 
-```
-assetId,name,location,status
-LAP001,"Laptop A","Office 101",Active
-MON005,"Monitor B","WFH","In Repair"
-```
-
-## Required Fields
-
-The following fields are required for each asset:
-- `assetId` (unique identifier)
-- `name`
-- `location`
-
-## Status Values
-
-The `status` field, if provided, must be one of:
-- Active
-- Inactive
-- Disposed
-- In Repair
+2. Asset Listing Features:
+   - Paginated table of all assets
+   - Search by asset ID, name, description, or location
+   - Filter by status (Active, Inactive, In Repair, Disposed)
+   - Click column headers to sort
+   - Click "Refresh" to update the list
 
 ## API Endpoints
 
-- `POST /api/assets/upload-validate`: Validates the uploaded file and returns a validation report
-- `POST /api/assets/confirm-import`: Performs the upsert operations for valid records
+### Asset Import
 
-## Error Handling
+- `POST /api/assets/extract-headers`: Extract headers from uploaded file
+- `POST /api/assets/upload-validate`: Validate uploaded file with mappings
+- `POST /api/assets/confirm-import`: Perform import operation
 
-The application handles various errors including:
-- Invalid file types
-- Malformed JSON or CSV
-- Missing required fields
-- Invalid field values
-- Duplicate asset IDs within the file
-- Database connection issues
+### Asset Management
 
-## Security Considerations
+- `GET /api/assets`: Get assets with pagination, search, and filtering
+  - Query parameters:
+    - `page`: Page number (default: 1)
+    - `limit`: Items per page (default: 10)
+    - `search`: Search term for asset ID, name, description, or location
+    - `status`: Filter by status
 
-- File size is limited to 10MB
-- Only JSON and CSV file types are accepted
-- Input validation is performed on both client and server sides
-- Temporary data storage with automatic cleanup
+## Asset Schema
+
+```javascript
+{
+  assetId: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  description: { type: String },
+  location: { type: String, required: true },
+  purchaseDate: { type: Date },
+  status: { 
+    type: String, 
+    enum: ['Active', 'Inactive', 'Disposed', 'In Repair']
+  }
+}
+```
 
 ## Sample Files for Testing
 
-This repository includes several sample files you can use to test the asset import wizard:
+The repository includes sample files for testing:
 
 ### 1. sample-assets.csv
-
-A clean CSV file with properly formatted data that should pass validation without errors:
-- Contains 10 sample assets
-- Includes all required fields (assetId, name, location)
-- Contains optional fields (description, purchaseDate, status)
-- Field names exactly match the database schema
-
-**Usage:** Upload this file for a successful import demonstration.
+Clean CSV file with all required fields that passes validation.
 
 ### 2. sample-assets.json
-
-A clean JSON file with properly formatted data that should pass validation:
-- Contains 10 sample assets
-- Includes all required fields (assetId, name, location)
-- Contains optional fields (description, purchaseDate, status)
-- Field names exactly match the database schema
-
-**Usage:** Upload this file to test JSON import functionality.
+Clean JSON file with all required fields that passes validation.
 
 ### 3. sample-assets-with-errors.csv
-
-A CSV file with intentional errors to demonstrate validation:
-- Contains 8 sample assets with various issues
-- Field names don't directly match the database schema (requires mapping)
-- Missing required fields in some records
-- Invalid date format in some records
-- Invalid status values in some records
-
-**Usage:** Upload this file to test the validation and error handling features.
+CSV file with intentional errors to demonstrate validation.
 
 ## Field Mapping Guide
 
-When importing `sample-assets-with-errors.csv`, use the following field mappings:
+When importing files with non-standard field names, map as follows:
 
-| Source Field (File) | Target Field (Database) |
-|---------------------|-------------------------|
-| id                  | assetId                 |
-| asset_name          | name                    |
-| notes               | description             |
-| office_location     | location                |
-| date_purchased      | purchaseDate            |
-| condition           | status                  |
+| Common Source Fields | Target Database Fields |
+|---------------------|------------------------|
+| id, asset_id, asset-id | assetId             |
+| name, asset_name, title | name               |
+| desc, description, notes | description       |
+| loc, location, place | location              |
+| date, purchase_date, purchased | purchaseDate |
+| state, status, condition | status            |
 
-## Running the Application
+## Technology Stack
 
-1. Start the MongoDB server
-2. Install dependencies: `npm install`
-3. Start the application: `npm run dev`
-4. Open your browser to: `http://localhost:3000`
+- **Frontend**: HTML, CSS (Tailwind CSS), JavaScript
+- **Backend**: Node.js, Express.js
+- **Database**: MongoDB
+- **File Processing**: csv-parser for CSV, native JSON parsing
 
-## Import Process
+## Development
 
-1. **Upload File:** Select one of the sample files
-2. **Map Fields:** Map source fields to database fields (already matched for clean files)
-3. **Validate Data:** Review validation results
-4. **Import Results:** View the import outcome
+### Project Structure
 
-## Testing Validation Errors
+```
+asset-upsert-app/
+├── public/                 # Static frontend files
+│   ├── index.html          # Main import wizard page
+│   ├── assets.html         # Asset listing page
+│   ├── script.js           # Import wizard logic
+│   └── assets.js           # Asset listing logic
+├── src/
+│   ├── controllers/        # Request handlers
+│   ├── models/             # Database models
+│   ├── routes/             # API routes
+│   ├── utils/              # Helper utilities
+│   └── server.js           # Express server setup
+├── uploads/                # Temporary file storage (gitignored)
+└── .env                    # Environment variables (gitignored)
+```
 
-To see how validation works:
-1. Upload `sample-assets-with-errors.csv`
-2. Map the fields as shown in the Field Mapping Guide above
-3. Proceed to validation
-4. You should see validation errors for:
-   - Missing assetId (row 2)
-   - Missing location (row 7)
-   - Invalid date format (rows 3 and 8)
-   - Invalid status values (rows 3-6) 
+### Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature-name`
+3. Commit your changes: `git commit -am 'Add feature'`
+4. Push to the branch: `git push origin feature-name`
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details. 
