@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asset Upsert App</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    .stepper-line {
+      height: 2px;
+      background-color: #e5e7eb;
+    }
+    .stepper-line-active {
+      background-color: #3b82f6;
+    }
+    .step-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #e5e7eb;
+      color: #6b7280;
+      font-weight: 600;
+    }
+    .step-circle-active {
+      background-color: #3b82f6;
+      color: white;
+    }
+    .step-circle-completed {
+      background-color: #3b82f6;
+      color: white;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+      <!-- Page Title -->
+      <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Bulk Import Assets</h1>
+      
+      <!-- Stepper -->
+      <div class="mb-8">
+        <div class="flex items-center justify-between">
+          <!-- Step 1 -->
+          <div class="flex flex-col items-center">
+            <div id="step-circle-1" class="step-circle step-circle-active">
+              1
+            </div>
+            <span id="step-text-1" class="mt-2 text-sm font-medium text-blue-600">Upload File</span>
+          </div>
+          
+          <!-- Line 1-2 -->
+          <div class="stepper-line w-full mx-2" id="line-1-2"></div>
+          
+          <!-- Step 2 -->
+          <div class="flex flex-col items-center">
+            <div id="step-circle-2" class="step-circle">
+              2
+            </div>
+            <span id="step-text-2" class="mt-2 text-sm font-medium text-gray-500">Map Fields</span>
+          </div>
+          
+          <!-- Line 2-3 -->
+          <div class="stepper-line w-full mx-2" id="line-2-3"></div>
+          
+          <!-- Step 3 -->
+          <div class="flex flex-col items-center">
+            <div id="step-circle-3" class="step-circle">
+              3
+            </div>
+            <span id="step-text-3" class="mt-2 text-sm font-medium text-gray-500">Validate Data</span>
+          </div>
+          
+          <!-- Line 3-4 -->
+          <div class="stepper-line w-full mx-2" id="line-3-4"></div>
+          
+          <!-- Step 4 -->
+          <div class="flex flex-col items-center">
+            <div id="step-circle-4" class="step-circle">
+              4
+            </div>
+            <span id="step-text-4" class="mt-2 text-sm font-medium text-gray-500">Import Results</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Step 1: Upload File -->
+      <div id="uploadStep" class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Upload Asset Data File</h2>
+        
+        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 mb-4" id="dropArea">
+          <div class="flex flex-col items-center justify-center">
+            <!-- Cloud Upload Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            
+            <p class="text-gray-700 text-center mb-4">Drag and drop a file here or click to browse</p>
+            
+            <input 
+              type="file" 
+              id="fileInput" 
+              name="assetFile" 
+              accept=".json,.csv" 
+              class="hidden"
+            />
+            
+            <button 
+              type="button" 
+              id="browseButton"
+              class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12" />
+              </svg>
+              BROWSE FILES
+            </button>
+          </div>
+        </div>
+        
+        <!-- File Info Display (shown after selection) -->
+        <div id="fileInfo" class="hidden bg-blue-50 rounded-md p-4 mb-4">
+          <div class="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span id="fileName" class="text-blue-700 font-medium"></span>
+            <span id="fileSize" class="text-blue-600 text-sm ml-2"></span>
+            <button id="removeFile" class="ml-auto text-gray-500 hover:text-gray-700">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <div class="text-sm text-gray-500 mb-6">
+          <p class="mb-1">Supported formats: Excel (.xlsx, .xls), CSV (.csv), JSON (.json)</p>
+          <p>Maximum file size: 10MB</p>
+        </div>
+        
+        <div class="text-gray-600 mt-4 mb-6">
+          <strong class="font-medium">Note:</strong> The file should contain asset data with column headers that match the field names in the database. In the next step, you will be able to map the columns from your file to the database fields.
+        </div>
+        
+        <div class="flex justify-between">
+          <button 
+            type="button" 
+            id="backButton"
+            class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            disabled
+          >
+            BACK
+          </button>
+          
+          <button 
+            type="button" 
+            id="nextButton"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled
+          >
+            NEXT
+          </button>
+        </div>
+      </div>
+      
+      <!-- Step 2: Map Fields -->
+      <div id="mapFieldsStep" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Map Fields from Import File to Database Fields</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 bg-gray-50 p-4 rounded-md">
+          <div>
+            <h3 class="text-sm font-medium text-gray-700 mb-2">Import Options</h3>
+            <div class="space-y-1">
+              <label for="updateExisting" class="block text-sm text-gray-600">Update Existing Records</label>
+              <select id="updateExisting" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                <option value="yes_update">Yes - Update if record exists</option>
+                <option value="no_skip">No - Skip if record exists</option>
+                <option value="no_create">No - Create new record always</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-sm font-medium text-gray-700 mb-2">Skip Errors</h3>
+            <div class="space-y-1">
+              <label for="skipErrors" class="block text-sm text-gray-600">Error Handling</label>
+              <select id="skipErrors" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                <option value="stop_on_error">No - Stop import on first error</option>
+                <option value="continue_on_error">Yes - Continue importing other records on error</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mb-6 overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source Field (File)</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target Field (Database)</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data Type</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Required</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="mappingTableBody" class="bg-white divide-y divide-gray-200">
+              <!-- Mapping rows will be dynamically inserted here -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="border-t border-gray-200 pt-6 mb-6">
+          <h3 class="text-sm font-medium text-gray-700 mb-4">Add Field Mapping</h3>
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+            <div>
+              <label for="newSourceField" class="block text-xs font-medium text-gray-700 mb-1">Source Field</label>
+              <input type="text" id="newSourceField" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Enter field name">
+            </div>
+            <div>
+              <label for="newTargetField" class="block text-xs font-medium text-gray-700 mb-1">Target Field</label>
+              <select id="newTargetField" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                <option value="">-- Select field --</option>
+                <!-- Target field options will be dynamically inserted here -->
+              </select>
+            </div>
+            <div>
+              <label for="newDataType" class="block text-xs font-medium text-gray-700 mb-1">Data Type</label>
+              <select id="newDataType" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 focus:outline-none sm:text-sm" disabled>
+                <option value="string">String</option>
+              </select>
+            </div>
+            <div>
+              <label for="newRequired" class="block text-xs font-medium text-gray-700 mb-1">Required</label>
+              <select id="newRequired" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 focus:outline-none sm:text-sm" disabled>
+                <option value="no">No</option>
+              </select>
+            </div>
+            <div>
+              <button id="addMappingButton" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                ADD
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex justify-between">
+          <button 
+            type="button" 
+            id="backToUploadButton"
+            class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+          >
+            BACK
+          </button>
+          
+          <button 
+            type="button" 
+            id="proceedToValidateButton"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            NEXT
+          </button>
+        </div>
+      </div>
+      
+      <!-- Step 3: Validation Results -->
+      <div id="validationStep" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Validate Import Data</h2>
+        
+        <!-- Validation Status Message Area -->
+        <div id="validationStatusSuccess" class="bg-green-50 border-l-4 border-green-500 p-4 mb-6">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm font-medium text-green-800">Validation Successful</p>
+              <p class="text-sm text-green-700 mt-1">No validation errors found. The data is ready to be imported.</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Validation Status Error Message (Hidden by default) -->
+        <div id="validationStatusError" class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 hidden">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm font-medium text-red-800">Validation Errors Found</p>
+              <p id="validationErrorMessage" class="text-sm text-red-700 mt-1">Some records have validation errors. Please review the details below. Only valid records will be imported if you choose to proceed.</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Validation Summary Section -->
+        <div class="bg-white border border-gray-200 rounded-md p-4 mb-6">
+          <h3 class="text-lg font-medium text-gray-800 mb-4">Validation Summary</h3>
+          
+          <!-- All Valid Scenario -->
+          <div id="allValidSummary" class="flex items-center mb-4">
+            <svg class="h-5 w-5 text-green-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+            <span class="text-green-700 font-medium">All data is valid</span>
+          </div>
+          
+          <!-- Error Scenario (Hidden by default) -->
+          <div id="errorSummary" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div class="bg-gray-50 p-3 rounded-md">
+                <p class="text-sm text-gray-500">Total Records Processed</p>
+                <p id="totalRecordsCount" class="text-lg font-medium">0</p>
+              </div>
+              <div class="bg-green-50 p-3 rounded-md">
+                <div class="flex items-center">
+                  <svg class="h-4 w-4 text-green-500 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                  </svg>
+                  <p class="text-sm text-gray-500">Valid Records</p>
+                </div>
+                <p id="validRecordsCount" class="text-lg font-medium">0</p>
+              </div>
+              <div class="bg-red-50 p-3 rounded-md">
+                <div class="flex items-center">
+                  <svg class="h-4 w-4 text-red-500 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                  </svg>
+                  <p class="text-sm text-gray-500">Invalid Records</p>
+                </div>
+                <p id="invalidRecordsCount" class="text-lg font-medium">0</p>
+              </div>
+            </div>
+            
+            <!-- Error Details Table -->
+            <div class="overflow-x-auto border border-gray-200 rounded-md mb-4">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Row</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset ID</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source Field</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error Message</th>
+                  </tr>
+                </thead>
+                <tbody id="errorDetailsTable" class="bg-white divide-y divide-gray-200">
+                  <!-- Error rows will be dynamically inserted here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <p id="importInstructions" class="text-sm text-gray-600">Click 'Import' to proceed with importing the data into the database.</p>
+        </div>
+        
+        <div class="flex justify-between">
+          <button 
+            type="button" 
+            id="backToMapButton"
+            class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+          >
+            BACK
+          </button>
+          
+          <button 
+            type="button" 
+            id="confirmImportButton"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            IMPORT
+          </button>
+        </div>
+      </div>
+      
+      <!-- Step 4: Import Results -->
+      <div id="importResultsStep" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Import Results</h2>
+        
+        <!-- Import Status Message - Success Scenario (Hidden by default) -->
+        <div id="importSuccessAlert" class="bg-green-50 border-l-4 border-green-500 p-4 mb-6 hidden">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm font-medium text-green-800">Import Completed Successfully</p>
+              <p id="importSuccessMessage" class="text-sm text-green-700 mt-1">Successfully imported 0 out of 0 records (0.0% success rate).</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Import Status Message - Error Scenario (Hidden by default) -->
+        <div id="importErrorAlert" class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 hidden">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm font-medium text-red-800">Import Completed with Errors</p>
+              <p id="importErrorMessage" class="text-sm text-red-700 mt-1">Imported 0 out of 0 records (0.0% success rate).</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Import Summary Section -->
+        <div class="mb-6">
+          <h3 class="text-lg font-medium text-gray-800 mb-4">Import Summary</h3>
+          
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Total Records Card -->
+            <div class="bg-gray-50 p-4 rounded-md text-center">
+              <p id="totalRecordsImport" class="text-3xl font-bold text-gray-700">0</p>
+              <p class="text-sm text-gray-500">Total Records</p>
+            </div>
+            
+            <!-- Created Records Card -->
+            <div class="bg-green-500 p-4 rounded-md text-center">
+              <p id="createdRecords" class="text-3xl font-bold text-white">0</p>
+              <p class="text-sm text-white">Created</p>
+            </div>
+            
+            <!-- Updated Records Card -->
+            <div class="bg-blue-500 p-4 rounded-md text-center">
+              <p id="updatedRecords" class="text-3xl font-bold text-white">0</p>
+              <p class="text-sm text-white">Updated</p>
+            </div>
+            
+            <!-- Failed Records Card -->
+            <div class="bg-red-500 p-4 rounded-md text-center">
+              <p id="failedRecords" class="text-3xl font-bold text-white">0</p>
+              <p class="text-sm text-white">Failed</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Error Details Section -->
+        <div id="errorDetailsSection" class="mb-6 hidden">
+          <div class="overflow-x-auto border border-gray-200 rounded-md">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Row</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Field</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error</th>
+                </tr>
+              </thead>
+              <tbody id="errorDetailsTableImport" class="bg-white divide-y divide-gray-200">
+                <!-- Error rows will be dynamically inserted here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex flex-col md:flex-row gap-3 justify-between">
+          <button 
+            type="button" 
+            id="backButton"
+            class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50"
+            disabled
+          >
+            BACK
+          </button>
+          
+          <div class="flex gap-3">
+            <button 
+              type="button" 
+              id="viewAssetsButton"
+              class="bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 font-medium py-2 px-6 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              VIEW ASSETS
+            </button>
+            
+            <button 
+              type="button" 
+              id="startNewImportButton"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              START NEW IMPORT
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Loading Overlay -->
+      <div id="loadingOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+          <div class="flex flex-col items-center">
+            <svg class="animate-spin h-10 w-10 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p id="loadingText" class="text-gray-700 text-lg font-medium">Processing...</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Error Alert -->
+      <div id="errorAlert" class="fixed inset-x-0 top-4 flex justify-center items-start z-50 hidden">
+        <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded shadow-md max-w-md">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm font-medium text-red-800" id="errorMessage">Error message goes here.</p>
+            </div>
+            <div class="ml-auto pl-3">
+              <button id="closeErrorButton" type="button" class="inline-flex text-red-500 focus:outline-none focus:text-red-700">
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html> 
